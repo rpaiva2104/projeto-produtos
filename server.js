@@ -47,6 +47,7 @@ const Produto = mongoose.model('Produto', {
 // =============================
 // 🏠 ROTA RAIZ (IMPORTANTE)
 // =============================
+const PORT = process.env.PORT || 3000
 app.get('/', (req, res) => {
     res.send('🚀 API de Produtos rodando com sucesso!')
 })
