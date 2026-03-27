@@ -1,8 +1,11 @@
-require('dotenv').config();
 const express = require('express');
+const cors = require('cors'); // <--- Adicione isso
 const mongoose = require('mongoose');
 
 const app = express();
+
+app.use(cors()); // <--- Libera o acesso para o frontend
+app.use(express.json());
 
 // =============================
 // ⚙️ MIDDLEWARES
