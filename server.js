@@ -8,19 +8,36 @@ app.use(express.json())
 // =============================
 // 🔌 CONEXÃO COM MONGODB
 // =============================
-mongoose.connect(process.env.MONGO_URI)
-.then(() => console.log("✅ Conectado ao MongoDB"))
-.catch(err => console.error("❌ Erro ao conectar:", err))
+async function conectarDB() {
+    try {
+        await mongoose.connect(process.env.MONGO_URI)
+        console.log("✅ Conectado ao MongoDB")
+    } catch (err) {
+        console.error("❌ Erro ao conectar:", err)
+        process.exit(1) // encerra app se falhar
+    }
+}
+
+conectarDB()
 
 // =============================
 // 📦 MODEL (PRODUTO)
 // =============================
 const Produto = mongoose.model('Produto', {
-    nome: String,
-    preco: Number,
+    nome: {
+        type: String,
+        required: true
+    },
+    preco: {
+        type: Number,
+        required: true
+    },
     descricao: String,
     categoria: String,
-    estoque: Number,
+    estoque: {
+        type: Number,
+        default: 0
+    },
     createdAt: {
         type: Date,
         default: Date.now
@@ -28,70 +45,12 @@ const Produto = mongoose.model('Produto', {
 })
 
 // =============================
-// 🚀 ROTAS (API REST)
+// 🏠 ROTA RAIZ (IMPORTANTE)
 // =============================
-
-// 🔍 Listar todos os produtos
+app.get('/', (req, res) => {
+    res.send('🚀 API de Produtos rodando com sucesso!')
+})
 app.get('/produtos', async (req, res) => {
-    try {
-        const produtos = await Produto.find()
-        res.json(produtos)
-    } catch (error) {
-        res.status(500).json({ erro: error.message })
-    }
-})
-
-// 🔍 Buscar produto por ID
-app.get('/produtos/:id', async (req, res) => {
-    try {
-        const produto = await Produto.findById(req.params.id)
-        if (!produto) return res.status(404).json({ msg: "Produto não encontrado" })
-        res.json(produto)
-    } catch (error) {
-        res.status(500).json({ erro: error.message })
-    }
-})
-
-// ➕ Criar produto
-app.post('/produtos', async (req, res) => {
-    try {
-        const novoProduto = new Produto(req.body)
-        const produtoSalvo = await novoProduto.save()
-        res.status(201).json(produtoSalvo)
-    } catch (error) {
-        res.status(400).json({ erro: error.message })
-    }
-})
-
-// ✏️ Atualizar produto
-app.put('/produtos/:id', async (req, res) => {
-    try {
-        const produtoAtualizado = await Produto.findByIdAndUpdate(
-            req.params.id,
-            req.body,
-            { new: true }
-        )
-        res.json(produtoAtualizado)
-    } catch (error) {
-        res.status(400).json({ erro: error.message })
-    }
-})
-
-// ❌ Deletar produto
-app.delete('/produtos/:id', async (req, res) => {
-    try {
-        await Produto.findByIdAndDelete(req.params.id)
-        res.json({ msg: "Produto removido com sucesso" })
-    } catch (error) {
-        res.status(500).json({ erro: error.message })
-    }
-})
-
-// =============================
-// 🌐 SERVIDOR
-// =============================
-const PORT = process.env.PORT || 3000
-
-app.listen(PORT, '0.0.0.0', () => {
-    console.log(`🚀 Servidor rodando na porta ${PORT}`)
+    const produtos = await Produto.find()
+    res.json(produtos)
 })
