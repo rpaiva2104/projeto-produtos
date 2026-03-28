@@ -8,8 +8,8 @@ const app = express();
 // =============================
 // ⚙️ MIDDLEWARES
 // =============================
-app.use(cors()); // Libera o acesso para o seu frontend no Render
-app.use(express.json()); // Essencial para ler o corpo (body) das requisições POST
+app.use(cors()); 
+app.use(express.json()); 
 app.use(express.static('public'));
 
 // =============================
@@ -30,24 +30,23 @@ const Produto = mongoose.models.Produto || mongoose.model('Produto', produtoSche
 // 🏠 ROTAS
 // =============================
 
-// Rota inicial
-app.get('/', (req, res) => {
-    res.send('🚀 API de Produtos rodando com sucesso!');
-});
-
-// Listar todos os produtos
-app.get('/produtos', async (req, res) => {
+// Rota para LISTAR produtos (Aceita GET / e GET /produtos)
+app.get(['/', '/produtos'], async (req, res) => {
     try {
-        const produtos = await Produto.find();
+        const produtos = await Produto.find().sort({ createdAt: -1 });
+        // Se for a raiz e não vier do fetch (navegador acessando), enviamos um aviso
+        if (req.path === '/' && !req.headers['accept'].includes('application/json')) {
+            return res.send('🚀 API de Produtos rodando! Use /produtos para ver os dados.');
+        }
         res.json(produtos);
     } catch (error) {
-        console.error("Erro ao buscar produtos:", error);
         res.status(500).json({ erro: "Erro ao buscar produtos" });
     }
 });
 
-// Cadastrar novo produto (POST) - IMPORTANTE PARA O SEU FRONTEND
-app.post('/produtos', async (req, res) => {
+// Rota para CADASTRAR produtos (Aceita POST / e POST /produtos)
+// Isso resolve o erro "Cannot POST /" se o seu frontend apontar para a raiz
+app.post(['/', '/produtos'], async (req, res) => {
     try {
         const novoProduto = new Produto(req.body);
         await novoProduto.save();
@@ -58,14 +57,12 @@ app.post('/produtos', async (req, res) => {
     }
 });
 
-// Deletar um produto (DELETE)
+// Rota para DELETAR um produto
 app.delete('/produtos/:id', async (req, res) => {
     try {
-        const id = req.params.id;
-        await Produto.findByIdAndDelete(id);
+        await Produto.findByIdAndDelete(req.params.id);
         res.json({ mensagem: "Produto removido com sucesso!" });
     } catch (error) {
-        console.error("Erro ao deletar:", error);
         res.status(500).json({ erro: "Erro ao deletar produto" });
     }
 });
@@ -77,17 +74,17 @@ const PORT = process.env.PORT || 3000;
 const MONGO_URI = process.env.MONGO_URI;
 
 if (!MONGO_URI) {
-    console.error("❌ ERRO: A variável MONGO_URI não foi encontrada.");
+    console.error("❌ ERRO: Variável MONGO_URI não encontrada no Render.");
 } else {
     mongoose.connect(MONGO_URI)
     .then(() => {
         console.log("✅ Conectado ao MongoDB");
         app.listen(PORT, '0.0.0.0', () => {
-            console.log(`🚀 Servidor rodando na porta ${PORT}`);
+            console.log(`🚀 Servidor ativo na porta ${PORT}`);
         });
     })
     .catch(err => {
-        console.error("❌ Erro fatal de conexão:", err);
+        console.error("❌ Erro de conexão:", err);
         process.exit(1);
     });
 }
